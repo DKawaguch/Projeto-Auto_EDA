@@ -8,6 +8,8 @@ from sklearn.impute import SimpleImputer
 from fpdf import FPDF
 from io import BytesIO
 
+print("Todos os pacotes foram importados com sucesso!")
+
 # Função para carregar dados
 def load_data(file):
     if file.name.endswith('.csv'):
@@ -17,13 +19,13 @@ def load_data(file):
     else:
         st.error("Formato de arquivo não suportado. Use CSV ou Excel.")
         return None
-
+    
 # Função para filtrar variáveis com base em critérios estatísticos
 def filter_variables(df, variance_threshold, missing_threshold, correlation_threshold):
     # Remover variáveis com alta porcentagem de valores ausentes
     df_filtered = df.loc[:, df.isnull().mean() <= missing_threshold]
 
-    # Preencher valores ausentes para análise de variância
+    # Preencher valores ausentes para análise de variância(média)
     imputer = SimpleImputer(strategy='mean')
     df_filled = pd.DataFrame(imputer.fit_transform(df_filtered), columns=df_filtered.columns)
 
@@ -38,10 +40,9 @@ def filter_variables(df, variance_threshold, missing_threshold, correlation_thre
     to_drop = [column for column in corr_matrix.columns if any(corr_matrix[column][upper_triangle] > correlation_threshold)]
     df_filtered = df_filtered.drop(columns=to_drop)
 
-    return df_filtered
+# Funções de plotagem
 
-
-# Função de geração de gráficos
+# Plot de variáveis numéricas
 def plot_numeric_variable(df):
     numeric_vars = df.select_dtypes(include=['float64', 'int64']).columns
     for var in numeric_vars:
@@ -50,6 +51,7 @@ def plot_numeric_variable(df):
         sns.histplot(df[var].dropna(), kde=True, ax=ax)
         st.pyplot(fig)
 
+# Plot de vairáveis categóricas
 def plot_categorical_variable(df):
     categorical_vars = df.select_dtypes(include=['object', 'category']).columns
     for var in categorical_vars:
@@ -58,6 +60,7 @@ def plot_categorical_variable(df):
         sns.countplot(data=df, x=var, ax=ax)
         st.pyplot(fig)
 
+# Plot de correlação
 def plot_relationship(df, var1, var2):
     st.subheader(f"Relação entre {var1} e {var2}")
     fig, ax = plt.subplots()

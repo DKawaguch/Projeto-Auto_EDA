@@ -25,9 +25,19 @@ def filter_variables(df, variance_threshold, missing_threshold, correlation_thre
     # Remover variáveis com alta porcentagem de valores ausentes
     df_filtered = df.loc[:, df.isnull().mean() <= missing_threshold]
 
-    # Preencher valores ausentes para análise de variância(média)
-    imputer = SimpleImputer(strategy='mean')
-    df_filled = pd.DataFrame(imputer.fit_transform(df_filtered), columns=df_filtered.columns)
+    # Preencher valores ausentes para análise de variância
+    # Separar colunas numéricas e categóricas
+    num_cols = df.select_dtypes(include=['float64', 'int64']).columns
+    cat_cols = df.select_dtypes(include=['object']).columns
+
+    # Imputação para colunas numéricas
+    imputer_num = SimpleImputer(strategy='mean')
+    df[num_cols] = imputer_num.fit_transform(df[num_cols])
+
+    # Imputação para colunas categóricas
+    imputer_cat = SimpleImputer(strategy='most_frequent')
+    df[cat_cols] = imputer_cat.fit_transform(df[cat_cols])
+
 
     # Selecionar variáveis com variância acima do limite
     selector = VarianceThreshold(threshold=variance_threshold)

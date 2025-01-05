@@ -136,4 +136,67 @@ def PDF_generator(analysis_images):
     return pdf_output
 
 # Aplicação Streamlit
+st.title("Ferramenta Automatizada para Análise Exploratória de Dados")
 
+# Carregar arquivo
+uploaded_file = st.load_data("Carregue seu arquivo (CSV, Excel ou JSON):")
+
+'''
+# Aplicação Streamlit
+st.title("Ferramenta de Análise de Dados")
+
+uploaded_file = st.file_uploader("Carregue seu arquivo (CSV ou Excel):")
+
+if uploaded_file is not None:
+    df = load_data(uploaded_file)
+    if df is not None:
+        st.write("Dados carregados com sucesso!")
+        st.write(df.head())
+
+        st.sidebar.title("Configurações")
+        variance_threshold = st.sidebar.slider("Limite de variância mínima", 0.0, 1.0, 0.01, 0.01)
+        missing_threshold = st.sidebar.slider("Limite máximo de valores ausentes (%)", 0.0, 1.0, 0.2, 0.01)
+        correlation_threshold = st.sidebar.slider("Limite de correlação", 0.0, 1.0, 0.8, 0.01)
+
+        df_filtered = filter_variables(df, variance_threshold, missing_threshold, correlation_threshold)
+        st.write("Dados após filtragem:")
+        st.write(df_filtered.head())
+
+        st.subheader("Análise Visual")
+        st.write("Gráficos para variáveis numéricas:")
+        plot_numeric_variable(df_filtered)
+
+        st.write("Gráficos para variáveis categóricas:")
+        plot_categorical_variable(df_filtered)
+
+        numeric_vars = df_filtered.select_dtypes(include=['float64', 'int64']).columns
+        if len(numeric_vars) > 1:
+            var1 = st.selectbox("Escolha a primeira variável numérica:", numeric_vars)
+            var2 = st.selectbox("Escolha a segunda variável numérica:", numeric_vars)
+            if var1 != var2:
+                plot_relationship(df_filtered, var1, var2)
+
+        # Gerar PDF
+        if st.button("Gerar Relatório PDF"):
+            analysis_images = []
+
+            # Salvar gráficos em memória
+            numeric_vars = df_filtered.select_dtypes(include=['float64', 'int64']).columns
+            for var in numeric_vars:
+                fig, ax = plt.subplots()
+                sns.histplot(df_filtered[var].dropna(), kde=True, ax=ax)
+                img_bytes = BytesIO()
+                fig.savefig(img_bytes, format='png')
+                img_bytes.seek(0)
+                analysis_images.append((f"Distribuição: {var}", img_bytes))
+                plt.close(fig)
+
+            pdf_file = generate_pdf(analysis_images)
+
+            st.download_button(
+                label="Baixar Relatório PDF",
+                data=pdf_file,
+                file_name="relatorio_analise.pdf",
+                mime="application/pdf"
+            )
+'''        

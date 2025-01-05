@@ -68,7 +68,7 @@ def cat_analysis(df):
         st.subheader(f"Análise da variável: {coluna}")
         ax=axes[i // 3, i % 3]
         sns.countplot(data=df, x=coluna, ax=ax)
-        ax.plot(data[coluna])
+        ax.plot(df[coluna])
         ax.set_title(coluna)
     st.pyplot(fig)
     
@@ -85,7 +85,7 @@ def num_analysis(df):
         st.subheader(f"Análise da variável: {coluna}")
         ax=axes[i // 3, i % 3]
         sns.histplot(data=df, x=coluna, ax=ax)
-        ax.plot(data[coluna])
+        ax.plot(df[coluna])
         ax.set_title(coluna)
     st.pyplot(fig)
 
@@ -114,7 +114,26 @@ def correlation_analysis(df):
     st.pyplot(fig)
 
 # Gerar um PDF contendo toda análise visual de forma elegante, como um relatório técnico e que seja possível fazer download deste arquivo.
+def PDF_generator(analysis_images):
 
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, 'Relatório de Análise de Dados', ln=True, align='C')
+    pdf.ln(10)
+
+    for title, img_bytes in analysis_images:
+        pdf.add_page()
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, title, ln=True)
+        pdf.ln(10)
+        pdf.image(img_bytes, x=10, y=30, w=190)
+
+    pdf_output = BytesIO()
+    pdf.output(pdf_output)
+    pdf_output.seek(0)
+    return pdf_output
 
 # Aplicação Streamlit
 

@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import math
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.feature_selection import VarianceThreshold
@@ -8,7 +9,8 @@ from sklearn.impute import SimpleImputer
 from fpdf import FPDF
 from io import BytesIO
 
-# FImportar Dados
+
+# Importar Dados
 def load_data(file):
     if file.name.endswith('.csv'):
         return pd.read_csv(file)
@@ -53,10 +55,42 @@ def data_filter(df, missing_threshold, missing_strat, variance_threshold, correl
     df_filled = df_filled.drop(columns=to_drop)
 
 # Apresentar análise de forma gráfica contendo gráficos apropriados para variáveis numéricas e categóricas.
+def cat_analysis(df):
 
+    cat_cols = df.select_dtypes(include='object').columns
+
+    # Criar grid para layout dos gráficos
+    rows = math.ceil(len(cat_cols) / 3)
+    fig, axes = plt.subplots(rows, 3, figsize=(15, 5 * rows))
+
+    # Gráficos para variáveis categóricas
+    for idx, coluna in cat_cols:
+        ax=axes[idx // 3, idx % 3]
+        sns.countplot(data=df, x=coluna, ax=ax)
+        ax.plot(data[coluna])
+        ax.set_title(coluna)
+        st.pyplot(fig)
+    
+def num_analysis(df):
+
+    num_cols = df.select_dtypes(include='number').columns
+
+    # Criar grid para layout dos gráficos
+    rows = math.ceil(len(num_cols) / 3)
+    fig, axes = plt.subplots(rows, 3, figsize=(15, 5 * rows))
+
+    # Gráficos para variáveis numéricas
+    for idx, coluna in num_cols:
+        ax=axes[idx // 3, idx % 3]
+        sns.histplot(data=df, x=coluna, ax=ax)
+        ax.plot(data[coluna])
+        ax.set_title(coluna)
+        st.pyplot(fig)
 
 # Apresentar a relação entre duas variáveis numéricas
+def correlation_analysis(df):
 
+    num_cols = df.select_dtypes(include='number').columns
 
 # Gerar um PDF contendo toda análise visual de forma elegante, como um relatório técnico e que seja possível fazer download deste arquivo.
 

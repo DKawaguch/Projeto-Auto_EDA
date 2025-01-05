@@ -64,12 +64,13 @@ def cat_analysis(df):
     fig, axes = plt.subplots(rows, 3, figsize=(15, 5 * rows))
 
     # Gráficos para variáveis categóricas
-    for idx, coluna in cat_cols:
-        ax=axes[idx // 3, idx % 3]
+    for i, coluna in cat_cols:
+        st.subheader(f"Análise da variável: {coluna}")
+        ax=axes[i // 3, i % 3]
         sns.countplot(data=df, x=coluna, ax=ax)
         ax.plot(data[coluna])
         ax.set_title(coluna)
-        st.pyplot(fig)
+    st.pyplot(fig)
     
 def num_analysis(df):
 
@@ -80,17 +81,37 @@ def num_analysis(df):
     fig, axes = plt.subplots(rows, 3, figsize=(15, 5 * rows))
 
     # Gráficos para variáveis numéricas
-    for idx, coluna in num_cols:
-        ax=axes[idx // 3, idx % 3]
+    for i, coluna in num_cols:
+        st.subheader(f"Análise da variável: {coluna}")
+        ax=axes[i // 3, i % 3]
         sns.histplot(data=df, x=coluna, ax=ax)
         ax.plot(data[coluna])
         ax.set_title(coluna)
-        st.pyplot(fig)
+    st.pyplot(fig)
 
 # Apresentar a relação entre duas variáveis numéricas
 def correlation_analysis(df):
 
     num_cols = df.select_dtypes(include='number').columns
+
+    # Criar grid para layout dos gráficos
+    var_combinations = math.comb(len(num_cols), 2)
+    rows = math.ceil(var_combinations / 3)
+    fig, axes = plt.subplots(rows, 3, figsize=(15, 5 * rows))
+
+    # Flatten axes array for easier indexing
+    axes = axes.flatten()
+
+    # Loop through all pairs of numerical variables
+    plot_index = 0
+    for coluna1 in enumerate(num_cols):
+        for coluna2 in enumerate(num_cols):
+            if coluna1 != coluna2 and coluna1 < coluna2:
+                st.subheader(f"Relação entre {coluna1} e {coluna2}")
+                sns.scatterplot(data=df, x=coluna1, y=coluna2, ax=axes[plot_index])
+                plot_index += 1
+
+    st.pyplot(fig)
 
 # Gerar um PDF contendo toda análise visual de forma elegante, como um relatório técnico e que seja possível fazer download deste arquivo.
 

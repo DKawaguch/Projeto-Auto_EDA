@@ -46,13 +46,15 @@ def data_filter(df, missing_threshold, missing_strat, variance_threshold, correl
     df_filled[num_cols] = selector.fit_transform(df_filled[num_cols])
 
     low_variance_cats = [col for col in cat_cols if df_filled[col].value_counts(normalize=True).var() < variance_threshold]
-    df_filled.drop(columns=low_variance_cats, inplace=True)
+    df_filled.drop(columns=low_variance_cats)
 
     # Excluir variáveis altamente correlacionadas
     corr_matrix = df_filled.corr().abs()
     upper_triangle = np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
     to_drop = [column for column in corr_matrix.columns if any(corr_matrix[column][upper_triangle] > correlation_threshold)]
     df_filled = df_filled.drop(columns=to_drop, inplace=True)
+
+    return df_filled
 
 # Apresentar análise de forma gráfica contendo gráficos apropriados para variáveis numéricas e categóricas.
 def cat_analysis(df):
@@ -71,6 +73,7 @@ def cat_analysis(df):
         ax.plot(df[coluna])
         ax.set_title(coluna)
     st.pyplot(fig)
+    plt.close(fig)
     
 def num_analysis(df):
 
@@ -88,6 +91,7 @@ def num_analysis(df):
         ax.plot(df[coluna])
         ax.set_title(coluna)
     st.pyplot(fig)
+    plt.close(fig)
 
 # Apresentar a relação entre duas variáveis numéricas
 def correlation_analysis(df):
@@ -112,6 +116,7 @@ def correlation_analysis(df):
                 plot_index += 1
 
     st.pyplot(fig)
+    plt.close(fig)
 
 # Gerar um PDF contendo toda análise visual de forma elegante, como um relatório técnico e que seja possível fazer download deste arquivo.
 def PDF_generator(analysis_images):
@@ -138,11 +143,10 @@ def PDF_generator(analysis_images):
 # Aplicação Streamlit
 st.title("Ferramenta Automatizada para Análise Exploratória de Dados")
 
-# Carregar arquivo
 uploaded_file = st.file_uploader("Carregue seu arquivo (CSV, Excel ou JSON):", type=['csv', 'xlsx', 'json'])
 
 if uploaded_file:
-    df = load_data
+    df = load_data(uploaded_file)
 
     if df is not None:
         st.write("Dados carregados com sucesso!", df.head())
@@ -153,9 +157,8 @@ if uploaded_file:
         variance_threshold = st.sidebar.slider("Limite de variância mínima", 0.0, 1.0, 0.01, 0.01)
         correlation_threshold = st.sidebar.slider("Limite de correlação", 0.0, 1.0, 0.8, 0.01)
 
-        if st.button('Filtrar Dados'):
-            df_filtered = data_filter(df, missing_threshold, missing_strat, variance_threshold, correlation_threshold)
-            st.write("Dados após filtragem:", df_filtered.head())
+        df_filtered = data_filter(df, missing_threshold, missing_strat, variance_threshold, correlation_threshold)
+        st.write("Dados após filtragem:", df_filtered.head())
 
         if st.button('Analisar variáveis categóricas'):
             cat_analysis(df_filtered)

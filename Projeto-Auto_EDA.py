@@ -52,7 +52,7 @@ def data_filter(df, missing_threshold, missing_strat, variance_threshold, correl
     corr_matrix = df_filled.corr().abs()
     upper_triangle = np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
     to_drop = [column for column in corr_matrix.columns if any(corr_matrix[column][upper_triangle] > correlation_threshold)]
-    df_filled = df_filled.drop(columns=to_drop)
+    df_filled = df_filled.drop(columns=to_drop, inplace=True)
 
 # Apresentar análise de forma gráfica contendo gráficos apropriados para variáveis numéricas e categóricas.
 def cat_analysis(df):
@@ -139,59 +139,47 @@ def PDF_generator(analysis_images):
 st.title("Ferramenta Automatizada para Análise Exploratória de Dados")
 
 # Carregar arquivo
-uploaded_file = st.load_data("Carregue seu arquivo (CSV, Excel ou JSON):")
+uploaded_file = st.file_uploader("Carregue seu arquivo (CSV, Excel ou JSON):", type=['csv', 'xlsx', 'json'])
 
-'''
-# Aplicação Streamlit
-st.title("Ferramenta de Análise de Dados")
+if uploaded_file:
+    df = load_data
 
-uploaded_file = st.file_uploader("Carregue seu arquivo (CSV ou Excel):")
-
-if uploaded_file is not None:
-    df = load_data(uploaded_file)
     if df is not None:
-        st.write("Dados carregados com sucesso!")
-        st.write(df.head())
+        st.write("Dados carregados com sucesso!", df.head())
 
         st.sidebar.title("Configurações")
-        variance_threshold = st.sidebar.slider("Limite de variância mínima", 0.0, 1.0, 0.01, 0.01)
         missing_threshold = st.sidebar.slider("Limite máximo de valores ausentes (%)", 0.0, 1.0, 0.2, 0.01)
+        missing_strat = st.sidebar.selectbox("Estratégia de preenchimento de valores faltantes:", ['mean', 'median', 'most_frequent'])
+        variance_threshold = st.sidebar.slider("Limite de variância mínima", 0.0, 1.0, 0.01, 0.01)
         correlation_threshold = st.sidebar.slider("Limite de correlação", 0.0, 1.0, 0.8, 0.01)
 
-        df_filtered = filter_variables(df, variance_threshold, missing_threshold, correlation_threshold)
-        st.write("Dados após filtragem:")
-        st.write(df_filtered.head())
+        if st.button('Filtrar Dados'):
+            df_filtered = data_filter(df, missing_threshold, missing_strat, variance_threshold, correlation_threshold)
+            st.write("Dados após filtragem:", df_filtered.head())
 
-        st.subheader("Análise Visual")
-        st.write("Gráficos para variáveis numéricas:")
-        plot_numeric_variable(df_filtered)
+        if st.button('Analisar variáveis categóricas'):
+            cat_analysis(df_filtered)
 
-        st.write("Gráficos para variáveis categóricas:")
-        plot_categorical_variable(df_filtered)
+        if st.button('Analisar variáveis numéricas'):
+            num_analysis(df_filtered)
+        
+        if st.button('Analisar correlação entre variáveis numéricas'):
+            correlation_analysis(df_filtered)
 
-        numeric_vars = df_filtered.select_dtypes(include=['float64', 'int64']).columns
-        if len(numeric_vars) > 1:
-            var1 = st.selectbox("Escolha a primeira variável numérica:", numeric_vars)
-            var2 = st.selectbox("Escolha a segunda variável numérica:", numeric_vars)
-            if var1 != var2:
-                plot_relationship(df_filtered, var1, var2)
-
-        # Gerar PDF
-        if st.button("Gerar Relatório PDF"):
+        if st.button('Gerar Relatório PDF'):
             analysis_images = []
 
-            # Salvar gráficos em memória
-            numeric_vars = df_filtered.select_dtypes(include=['float64', 'int64']).columns
-            for var in numeric_vars:
+            num_cols = df_filtered.select_dtypes(include='number').columns
+            for col in num_cols:
                 fig, ax = plt.subplots()
-                sns.histplot(df_filtered[var].dropna(), kde=True, ax=ax)
+                sns.histplot(df_filtered[col].dropna(), kde=True, ax=ax)
                 img_bytes = BytesIO()
                 fig.savefig(img_bytes, format='png')
                 img_bytes.seek(0)
-                analysis_images.append((f"Distribuição: {var}", img_bytes))
+                analysis_images.append((f"Distribuição: {col}", img_bytes))
                 plt.close(fig)
 
-            pdf_file = generate_pdf(analysis_images)
+            pdf_file = PDF_generator(analysis_images)
 
             st.download_button(
                 label="Baixar Relatório PDF",
@@ -199,4 +187,3 @@ if uploaded_file is not None:
                 file_name="relatorio_analise.pdf",
                 mime="application/pdf"
             )
-'''        

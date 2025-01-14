@@ -27,32 +27,35 @@ def data_filter(df, missing_threshold, missing_strat, variance_threshold, correl
 
     # Filtrar as variáveis com alta porcentagem de valores faltantes
     df_filtered = df.loc[:, df.isnull().mean() <= missing_threshold]
-
+    
     df_filled = df_filtered.copy()
 
     # Separar variáveis numéricas e categóricas
-    num_cols = df_filtered.select_dtypes(include='number').columns
-    cat_cols = df_filtered.select_dtypes(include='object').columns
+    num_cols = df_filled.select_dtypes(include='number').columns
+    cat_cols = df_filled.select_dtypes(include='object').columns
 
-    # Substituir valores numéricos pela média e categóricos por "NA"
+    # Substituir valores numéricos pela estratégia preferida e categóricos por "NA"
     inputer_num = SimpleImputer(strategy=str(missing_strat))
-    df_filled[num_cols] = inputer_num.fit_transform(df_filtered[num_cols])
+    df_filled[num_cols] = inputer_num.fit_transform(df_filled[num_cols])
     
     inputer_cat = SimpleImputer(strategy='constant', fill_value='Não Informado')
-    df_filled[cat_cols] = inputer_cat.fit_transform(df_filtered[cat_cols])
+    df_filled[cat_cols] = inputer_cat.fit_transform(df_filled[cat_cols])
 
     # Excluir variáveis com variânica abaixo do limite
     selector = VarianceThreshold(threshold=variance_threshold)
-    df_filled[num_cols] = selector.fit_transform(df_filled[num_cols])
+    selected_features = selector.fit_transform(df_filled[num_cols])
+    selected_columns = df_filled[num_cols].columns[selector.get_support()]
+    df_filled = pd.DataFrame(selected_features, columns=selected_columns, index=df_filled.index)
+    #df_filled[num_cols] = selector.fit_transform(df_filled[num_cols])
 
-    low_variance_cats = [col for col in cat_cols if df_filled[col].value_counts(normalize=True).var() < variance_threshold]
+    low_variance_cats = [col for col in cat_cols if col in df_filled.columns and df_filled[col].value_counts(normalize=True).var() < variance_threshold]
     df_filled.drop(columns=low_variance_cats)
 
     # Excluir variáveis altamente correlacionadas
     corr_matrix = df_filled.corr().abs()
     upper_triangle = np.triu(np.ones(corr_matrix.shape), k=1).astype(bool)
-    to_drop = [column for column in corr_matrix.columns if any(corr_matrix[column][upper_triangle] > correlation_threshold)]
-    df_filled = df_filled.drop(columns=to_drop, inplace=True)
+    to_drop = [column for column in corr_matrix.columns if any(corr_matrix.loc[upper_triangle, column] > correlation_threshold)]
+    df_filled.drop(columns=to_drop, inplace=True)
 
     return df_filled
 

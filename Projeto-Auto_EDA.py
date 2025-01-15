@@ -48,8 +48,11 @@ def data_filter(df, missing_threshold, missing_strat, variance_threshold, correl
     df_filled = pd.DataFrame(selected_features, columns=selected_columns, index=df_filled.index)
     #df_filled[num_cols] = selector.fit_transform(df_filled[num_cols])
 
-    low_variance_cats = [col for col in cat_cols if col in df_filled.columns and df_filled[col].value_counts(normalize=True).var() < variance_threshold]
-    df_filled.drop(columns=low_variance_cats)
+    # Ensure at least one categorical column is retained
+    if len(cat_cols) > 0:
+        low_variance_cats = [col for col in cat_cols if col in df_filled.columns and df_filled[col].value_counts(normalize=True).var() < variance_threshold]
+        if len(low_variance_cats) < len(cat_cols):
+            df_filled.drop(columns=low_variance_cats, inplace=True)
 
     # Excluir variáveis altamente correlacionadas
     corr_matrix = df_filled.corr().abs()
@@ -64,13 +67,18 @@ def cat_analysis(df):
 
     cat_cols = df.select_dtypes(include='object').columns
 
-    # Criar grid para layout dos gráficos
-    rows = math.ceil(len(cat_cols) / 3)
+    # Calcule o número de linhas necessárias
+    rows = len(df.select_dtypes(include=['object']).columns) // 3 + 1  # Ajuste conforme necessário
+
+    if rows == 0:
+        print("Não há colunas categóricas para plotar.")
+        return
+
     fig, axes = plt.subplots(rows, 3, figsize=(15, 5 * rows))
 
     # Gráficos para variáveis categóricas
-    for i, coluna in cat_cols:
-        st.subheader(f"Análise da variável: {coluna}")
+    for i, coluna in enumerate(cat_cols):
+        #st.subheader(f"Análise da variável: {coluna}")
         ax=axes[i // 3, i % 3]
         sns.countplot(data=df, x=coluna, ax=ax)
         ax.plot(df[coluna])
@@ -87,8 +95,8 @@ def num_analysis(df):
     fig, axes = plt.subplots(rows, 3, figsize=(15, 5 * rows))
 
     # Gráficos para variáveis numéricas
-    for i, coluna in num_cols:
-        st.subheader(f"Análise da variável: {coluna}")
+    for i, coluna in enumerate(num_cols):
+        #st.subheader(f"Análise da variável: {coluna}")
         ax=axes[i // 3, i % 3]
         sns.histplot(data=df, x=coluna, ax=ax)
         ax.plot(df[coluna])
@@ -111,10 +119,10 @@ def correlation_analysis(df):
 
     # Loop through all pairs of numerical variables
     plot_index = 0
-    for coluna1 in enumerate(num_cols):
-        for coluna2 in enumerate(num_cols):
-            if coluna1 != coluna2 and coluna1 < coluna2:
-                st.subheader(f"Relação entre {coluna1} e {coluna2}")
+    for i, coluna1 in enumerate(num_cols):
+        for j, coluna2 in enumerate(num_cols):
+            if i < j:
+                #st.subheader(f"Relação entre {coluna1} e {coluna2}")
                 sns.scatterplot(data=df, x=coluna1, y=coluna2, ax=axes[plot_index])
                 plot_index += 1
 

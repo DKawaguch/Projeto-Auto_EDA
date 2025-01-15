@@ -8,7 +8,8 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.impute import SimpleImputer
 from fpdf import FPDF
 from io import BytesIO
-
+from PIL import Image
+import tempfile
 
 # Importar Dados
 def load_data(file):
@@ -130,25 +131,30 @@ def correlation_analysis(df):
     plt.close(fig)
 
 # Gerar um PDF contendo toda análise visual de forma elegante, como um relatório técnico e que seja possível fazer download deste arquivo.
-def PDF_generator(analysis_images):
-
+def PDF_generator(images):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, 'Relatório de Análise de Dados', ln=True, align='C')
-    pdf.ln(10)
-
-    for title, img_bytes in analysis_images:
+    
+    for img_bytes in images:
         pdf.add_page()
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, title, ln=True)
-        pdf.ln(10)
-        pdf.image(img_bytes, x=10, y=30, w=190)
+        
+        # Salvar BytesIO como um arquivo temporário
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_file:
+            temp_file.write(img_bytes.getvalue())  # Gravar os dados no arquivo temporário
+            temp_file_path = temp_file.name
 
-    pdf_output = BytesIO()
-    pdf.output(pdf_output)
-    pdf_output.seek(0)
+        # Adicionar a imagem ao PDF
+        pdf.image(temp_file_path, x=10, y=30, w=190)
+
+    # Salvar o PDF em um arquivo temporário
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf_file:
+        pdf_output_path = temp_pdf_file.name
+        pdf.output(pdf_output_path)  # Grava no arquivo temporário
+    
+    # Abrir o arquivo PDF temporário e convertê-lo para BytesIO
+    with open(pdf_output_path, "rb") as f:
+        pdf_output = BytesIO(f.read())
+
     return pdf_output
 
 # Aplicação Streamlit
@@ -183,15 +189,49 @@ if uploaded_file:
         if st.button('Gerar Relatório PDF'):
             analysis_images = []
 
-            num_cols = df_filtered.select_dtypes(include='number').columns
-            for col in num_cols:
+            # Análise de variáveis categóricas
+            cat_cols = df_filtered.select_dtypes(include='object').columns
+            for col in cat_cols:
                 fig, ax = plt.subplots()
-                sns.histplot(df_filtered[col].dropna(), kde=True, ax=ax)
+                sns.countplot(x=df_filtered[col].dropna(), ax=ax)
                 img_bytes = BytesIO()
                 fig.savefig(img_bytes, format='png')
                 img_bytes.seek(0)
-                analysis_images.append((f"Distribuição: {col}", img_bytes))
-                plt.close(fig)
+                analysis_images.append(img_bytes)
+                plt.close(fig)  # Fechar fig após salvar
+
+            # Análise de variáveis numéricas
+            num_cols = df_filtered.select_dtypes(include='number').columns
+            for col in num_cols:
+                fig, ax = plt.subplots()
+                sns.histplot(x=df_filtered[col].dropna(), kde=True, ax=ax)
+                img_bytes = BytesIO()
+                fig.savefig(img_bytes, format='png')
+                img_bytes.seek(0)
+                analysis_images.append(img_bytes)
+                plt.close(fig)  # Fechar fig após salvar
+
+            # Análise de correlação entre variáveis numéricas
+            for i, col1 in enumerate(num_cols):
+                for j, col2 in enumerate(num_cols):
+                    if i < j:
+                        fig, ax = plt.subplots()
+                        sns.scatterplot(x=df_filtered[col1], y=df_filtered[col2], ax=ax)
+                        img_bytes = BytesIO()
+                        fig.savefig(img_bytes, format='png')
+                        img_bytes.seek(0)
+                        analysis_images.append(img_bytes)
+                        plt.close(fig)  # Fechar fig após salvar
+
+            # Geração do PDF
+            pdf_file = PDF_generator(analysis_images)
+
+            st.download_button(
+                label="Baixar Relatório PDF",
+                data=pdf_file,
+                file_name="relatorio_analise.pdf",
+                mime="application/pdf"
+            )
 
             pdf_file = PDF_generator(analysis_images)
 

@@ -66,6 +66,3 @@ Este projeto consiste em uma aplicação desenvolvida com Streamlit para realiza
 
 ## Contribuindo
 Contribuições são bem-vindas! Para reportar bugs ou sugerir melhorias, abra uma issue ou envie um pull request neste repositório.
-
-## Licença
-Este projeto está licenciado sob a licença MIT. Consulte o arquivo LICENSE para mais informações.
